@@ -30,6 +30,7 @@ flowchart TD
     
     D --> G[Send WhatsApp Reply]
     G --> H[Citizen Receives Answer]
+```
 
     ---
 
