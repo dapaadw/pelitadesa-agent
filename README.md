@@ -8,31 +8,31 @@ An automated, retrieval-grounded conversational agent deployed via WhatsApp Clou
 
 ```mermaid
 flowchart TD
-    A[Citizen WhatsApp Message] --> B[WhatsApp Trigger / Webhook]
-    B --> C[PelitaDesa Agent\nGroq: Llama-3.3-70B]
-    
-    subgraph Shared Resources
-        M[(Chat Memory\nSession: Sender Phone)]
-        KB[(Pinecone Vector Store\nIndex: sidorejo-db)]
+    A["Citizen WhatsApp Message"] --> B["WhatsApp Trigger / Webhook"]
+    B --> C["PelitaDesa Agent<br/>(Groq: Llama-3.3-70B)"]
+
+    subgraph Storage ["Shared Resources"]
+        M[("Chat Memory<br/>Session: Sender Phone")]
+        KB[("Pinecone Vector Store<br/>Index: sidorejo-db")]
     end
-    
-    C <--> M
-    C <--> KB
-    
-    C -->|Success| D[Combine Responses]
-    C -->|Fail / Rate Limit| E[Fallback Agent\nGemini 2.5 Flash]
-    
-    E <--> M
-    E <--> KB
-    
-    E -->|Success| D
-    E -->|Total Outage| F[Send Service Unavailable Message]
-    
-    D --> G[Send WhatsApp Reply]
-    G --> H[Citizen Receives Answer]
+
+    C --- M
+    C --- KB
+
+    C -->|"Primary Success"| D["Combine Responses"]
+    C -->|"Fail / Rate Limit"| E["Fallback Agent<br/>(Gemini 2.5 Flash)"]
+
+    E --- M
+    E --- KB
+
+    E -->|"Fallback Success"| D
+    E -->|"Total Outage"| F["Send Service Unavailable Message"]
+
+    D --> G["Send WhatsApp Reply"]
+    G --> H["Citizen Receives Answer"]
 ```
 
-    ---
+---
 
 ## Key System Components
 
