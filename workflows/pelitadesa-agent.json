@@ -1,0 +1,576 @@
+{
+  "name": "pelitadesa-agent",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "messages"
+        ],
+        "options": {}
+      },
+      "id": "90bcdd3f-bb36-4864-8706-b9f7f409ae98",
+      "name": "WhatsApp Trigger",
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        656
+      ],
+      "webhookId": "YOUR-WEBHOOK-ID",
+      "credentials": {
+        "whatsAppTriggerApi": {
+          "id": "wJHQtx3P1yc8LfJF",
+          "name": "WhatsApp OAuth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $(\"WhatsApp Trigger\").item.json.messages[0].text.body }}",
+        "options": {
+          "systemMessage": "Anda adalah \"PelitaDesa\", Asisten AI Resmi berbasis RAG (Retrieval-Augmented Generation) milik Pemerintah Desa Sidorejo, Kecamatan Doko, Kabupaten Blitar. Tugas utama Anda adalah memberikan informasi yang 100% akurat, ramah, dan solutif mengenai alur birokrasi, syarat administrasi, dan layanan publik desa kepada warga melalui WhatsApp.\n\nURUTAN LOGIKA BERFIKIR (WAJIB):\n1. Setiap kali warga bertanya tentang dokumen, syarat, alur, jam kerja, atau lokasi desa, Anda WAJIB langsung memanggil dan mencari jawabannya di Village Knowledge Base. Jangan pernah menjawab menggunakan pengetahuan umum Anda sendiri jika terkait aturan desa.\n2. Jika informasi yang dicari ADALAH layanan yang VALID dan ADA di dalam database (seperti Syarat KTP Baru/Hilang/Rusak, Surat Pengantar Nikah N1/N2/N4, atau Jam Operasional), susun jawaban sesuai format WhatsApp di bawah.\n3. Jika warga bertanya tentang layanan administrasi yang TIDAK ADA atau BELUM LENGKAP di database, jawab secara jujur dengan template penolakan halus.\n4. Jika warga ngobrol di luar topik pelayanan Desa Sidorejo (misal: tanya resep, matematika, atau gosip), tolak dengan sopan dan ingatkan fungsi Anda.\n\nATURAN FORMAT BALASAN WHATSAPP (WAJIB):\n- Awali selalu dengan sapaan hangat: \"Halo Bapak/Ibu Warga Sidorejo...\"\n- Gunakan format teks biasa tanpa markup khusus. Jangan gunakan asterisk (*) atau simbol formatting lainnya.\n- Gunakan penomoran (1, 2, 3) atau bullet points (-) yang jelas untuk daftar berkas persyaratan. Jangan ditulis berjejer ke samping.\n- Berikan jarak (line break / enter 2x) antar paragraf atau poin utama agar tulisan tidak menumpuk rapat.\n- Di akhir jawaban yang bersifat pengurusan berkas, selalu sisipkan pengingat Jam Operasional Balai Desa Sidorejo.\n\nTEMPLATE JAWABAN JIKA DATA DITEMUKAN:\n\"Halo Bapak/Ibu Warga Sidorejo, berikut adalah persyaratan resmi untuk pengurusan [Nama Layanan] di Desa Sidorejo:\n\n1. [Syarat 1]\n2. [Syarat 2]\n3. [Syarat 3]\n\nSilakan bawa semua berkas di atas ke Kantor Balai Desa Sidorejo pada jam operasional kerja:\n- Senin - Kamis: 08.00 - 15.00 WIB\n- Jumat: 08.00 - 14.30 WIB\n\nAda lagi informasi pelayanan desa yang bisa PelitaDesa bantu?\"\n\nTEMPLATE JAWABAN JIKA DATA TIDAK DITEMUKAN:\n\"Halo Bapak/Ibu Warga Sidorejo, mohon maaf saat ini informasi detail mengenai syarat tersebut belum tersedia di sistem online kami.\n\nUntuk menghindari kesalahan informasi, PelitaDesa sarankan Bapak/Ibu bisa langsung berkonsultasi dengan Ketua RT/RW setempat, atau datang langsung ke Kantor Balai Desa Sidorejo pada hari dan jam kerja. Terima kasih atas pengertiannya.\""
+        }
+      },
+      "id": "c3b735c0-2dc3-4f87-b8a8-cb5052559fdb",
+      "name": "Pelitadesa Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        464,
+        656
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('WhatsApp Trigger').item.json.messages[0].from }}"
+      },
+      "id": "bf05522e-04f4-45b8-8d74-082d928e2479",
+      "name": "Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        928,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Cari informasi resmi mengenai syarat administrasi, prosedur layanan, dokumen, alur pengurusan, jam operasional, dan lokasi Balai Desa Sidorejo. Gunakan tool ini untuk semua pertanyaan terkait pelayanan publik desa.",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "sidorejo-db",
+          "mode": "list",
+          "cachedResultName": "sidorejo-db"
+        },
+        "topK": 5,
+        "options": {}
+      },
+      "id": "69f6f03c-8a27-4344-8366-6f9e089cff36",
+      "name": "Village Knowledge Base",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        1072,
+        528
+      ],
+      "credentials": {
+        "pineconeApi": {
+          "id": "8RphP5YdwG4WgI5Z",
+          "name": "Pinecone account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "--",
+        "recipientPhoneNumber": "={{ $(\"WhatsApp Trigger\").item.json.messages[0].from }}",
+        "textBody": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "id": "34bd1958-5134-41ba-8c33-e0ee78ba97a0",
+      "name": "Send WhatsApp Reply",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        2368,
+        640
+      ],
+      "webhookId": "YOUR_WEBHOOK_ID",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "5Ou8Up2RRSUyi7Su",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "5ff151d3-b167-4159-9d58-2d4cc0f19926",
+      "name": "Gemini Embeddings",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1152,
+        736
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YsXCPOeOGxcu1vSu",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "db1b5410-ec3c-4414-a2e0-76de0b21557d",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        1312
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_DRIVE_FILE_ID",
+          "mode": "list",
+          "cachedResultName": "kb_layanan_administrasi_desa_sidorejo.md",
+          "cachedResultUrl": "https://docs.google.com/document/d/YOUR_GOOGLE_DRIVE_FILE_ID/edit"
+        },
+        "options": {
+          "binaryPropertyName": "data",
+          "googleFileConversion": {}
+        }
+      },
+      "id": "e1c416b7-5a6f-4740-acac-c7c3a4b48777",
+      "name": "Download File from Google Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        464,
+        1312
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zgwC10tPUHdkfvHG",
+          "name": "Google Drive OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "sidorejo-db",
+          "mode": "list",
+          "cachedResultName": "sidorejo-db"
+        },
+        "options": {
+          "clearNamespace": false
+        }
+      },
+      "id": "f158425a-39bf-4330-9a9a-0eefd3c34d66",
+      "name": "Insert to Pinecone",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        720,
+        1312
+      ],
+      "credentials": {
+        "pineconeApi": {
+          "id": "8RphP5YdwG4WgI5Z",
+          "name": "Pinecone account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "718e7f78-031a-448a-ba97-3ecfb49ec1a2",
+      "name": "Gemini Embeddings Upload",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        688,
+        1536
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YsXCPOeOGxcu1vSu",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "textSplittingMode": "custom",
+        "options": {}
+      },
+      "id": "aa1bad89-e4cd-40d9-851a-9d24ece3ffe0",
+      "name": "Default Data Loader",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        816,
+        1536
+      ]
+    },
+    {
+      "parameters": {
+        "chunkOverlap": 200,
+        "options": {}
+      },
+      "id": "47918ca1-405a-4769-8f40-cd7c73e8c46d",
+      "name": "Recursive Character Text Splitter",
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        896,
+        1744
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 🔧 TROUBLESHOOTING WHATSAPP (Dashboard Meta Terbaru)\n\n**Jika chat tidak masuk/keluar:**\n\n1. **Pastikan Workflow AKTIF** (toggle ON di kanan atas n8n)\n\n2. **Setup WhatsApp Trigger Credential di Meta:**\n   - Buka https://business.facebook.com\n   - Pilih Business Account Anda\n   - Klik menu \"WhatsApp Accounts\" di sidebar kiri\n   - Pilih WhatsApp Business Account yang aktif\n   - Masuk ke tab \"Configuration\"\n   - Di bagian \"Webhook\", klik \"Edit\"\n   - Masukkan Webhook URL dari n8n (copy dari WhatsApp Trigger node)\n   - Verify Token: masukkan token yang sama dengan di n8n credential\n   - Subscribe ke \"messages\" event\n   - Klik \"Verify and Save\"\n\n3. **Ambil Phone Number ID yang BENAR:**\n   - Di dashboard Meta, klik \"WhatsApp Accounts\"\n   - Pilih nomor WhatsApp Anda\n   - Klik tab \"Phone Numbers\"\n   - Copy \"Phone Number ID\" (bukan nomor telepon)\n   - Format: angka panjang 15 digit (contoh: 123456789012345)\n   - Paste ke node \"Send WhatsApp Reply\" di parameter phoneNumberId\n\n4. **Ambil Access Token:**\n   - Di dashboard Meta, masuk ke \"System Users\" (di menu kiri)\n   - Pilih atau buat System User\n   - Klik \"Generate New Token\"\n   - Pilih App Anda\n   - Centang permission: whatsapp_business_messaging, whatsapp_business_management\n   - Copy token yang muncul\n   - Paste ke WhatsApp API credential di n8n\n\n5. **Verifikasi Nomor WhatsApp:**\n   - Pastikan nomor sudah verified di Meta\n   - Status harus \"Connected\" bukan \"Pending\"\n\n6. **Test Workflow:**\n   - Aktifkan workflow\n   - Kirim pesan WhatsApp ke nomor bisnis Anda\n   - Cek \"Executions\" di n8n untuk melihat log\n   - Jika ada error, baca pesan errornya",
+        "height": 1160,
+        "width": 1644,
+        "color": 6
+      },
+      "id": "94e3fa7d-fbe1-4e6e-ac5b-f8ada3914773",
+      "name": "Sticky Note 193c2ce9",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1648,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {
+          "maxTokensToSample": 2048,
+          "temperature": 0.3
+        }
+      },
+      "id": "d23a18f2-c2fc-4c18-84f1-2fd358c41da9",
+      "name": "Groq Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        544,
+        880
+      ],
+      "credentials": {
+        "groqApi": {
+          "id": "EONZgT7mUIZSfdmE",
+          "name": "Groq account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $(\"WhatsApp Trigger\").item.json.messages[0].text.body }}",
+        "options": {
+          "systemMessage": "Anda adalah \"PelitaDesa\", Asisten AI Resmi berbasis RAG (Retrieval-Augmented Generation) milik Pemerintah Desa Sidorejo, Kecamatan Doko, Kabupaten Blitar. Tugas utama Anda adalah memberikan informasi yang 100% akurat, ramah, dan solutif mengenai alur birokrasi, syarat administrasi, dan layanan publik desa kepada warga melalui WhatsApp.\n\nURUTAN LOGIKA BERFIKIR (WAJIB):\n1. Setiap kali warga bertanya tentang dokumen, syarat, alur, jam kerja, atau lokasi desa, Anda WAJIB langsung memanggil dan mencari jawabannya di Village Knowledge Base. Jangan pernah menjawab menggunakan pengetahuan umum Anda sendiri jika terkait aturan desa.\n2. Jika informasi yang dicari ADALAH layanan yang VALID dan ADA di dalam database (seperti Syarat KTP Baru/Hilang/Rusak, Surat Pengantar Nikah N1/N2/N4, atau Jam Operasional), susun jawaban sesuai format WhatsApp di bawah.\n3. Jika warga bertanya tentang layanan administrasi yang TIDAK ADA atau BELUM LENGKAP di database, jawab secara jujur dengan template penolakan halus.\n4. Jika warga ngobrol di luar topik pelayanan Desa Sidorejo (misal: tanya resep, matematika, atau gosip), tolak dengan sopan dan ingatkan fungsi Anda.\n\nATURAN FORMAT BALASAN WHATSAPP (WAJIB):\n- Awali selalu dengan sapaan hangat: \"Halo Bapak/Ibu Warga Sidorejo...\"\n- Gunakan format teks biasa tanpa markup khusus. Jangan gunakan asterisk (*) atau simbol formatting lainnya.\n- Gunakan penomoran (1, 2, 3) atau bullet points (-) yang jelas untuk daftar berkas persyaratan. Jangan ditulis berjejer ke samping.\n- Berikan jarak (line break / enter 2x) antar paragraf atau poin utama agar tulisan tidak menumpuk rapat.\n- Di akhir jawaban yang bersifat pengurusan berkas, selalu sisipkan pengingat Jam Operasional Balai Desa Sidorejo.\n\nTEMPLATE JAWABAN JIKA DATA DITEMUKAN:\n\"Halo Bapak/Ibu Warga Sidorejo, berikut adalah persyaratan resmi untuk pengurusan [Nama Layanan] di Desa Sidorejo:\n\n1. [Syarat 1]\n2. [Syarat 2]\n3. [Syarat 3]\n\nSilakan bawa semua berkas di atas ke Kantor Balai Desa Sidorejo pada jam operasional kerja:\n- Senin - Kamis: 08.00 - 15.00 WIB\n- Jumat: 08.00 - 14.30 WIB\n\nAda lagi informasi pelayanan desa yang bisa PelitaDesa bantu?\"\n\nTEMPLATE JAWABAN JIKA DATA TIDAK DITEMUKAN:\n\"Halo Bapak/Ibu Warga Sidorejo, mohon maaf saat ini informasi detail mengenai syarat tersebut belum tersedia di sistem online kami.\n\nUntuk menghindari kesalahan informasi, PelitaDesa sarankan Bapak/Ibu bisa langsung berkonsultasi dengan Ketua RT/RW setempat, atau datang langsung ke Kantor Balai Desa Sidorejo pada hari dan jam kerja. Terima kasih atas pengertiannya.\""
+        }
+      },
+      "id": "09469ec8-3a00-4ffe-b40f-3ec5a26d6041",
+      "name": "Pelitadesa Agent (Gemini)",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1792,
+        352
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "numberInputs": 5
+      },
+      "id": "ce8fd94d-38c8-47f5-8b00-71ddb9acbf1c",
+      "name": "Combine Responses",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2144,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 🔄 AI FALLBACK SYSTEM\n\nWorkflow ini menggunakan 4 AI model dengan fallback otomatis:\n\n1. **Groq (Primary)** - Llama 3.3 70B\n   - Model utama yang digunakan pertama kali\n   - Jika limit/error, otomatis pindah ke OpenAI\n\n2. **OpenAI (Fallback 1)** - GPT-5 Mini\n   - Backup pertama jika Groq gagal\n   - Jika limit/error, otomatis pindah ke Claude\n\n3. **Claude (Fallback 2)** - Claude Sonnet 4.6\n   - Backup kedua jika OpenAI gagal\n   - Jika limit/error, otomatis pindah ke Gemini\n\n4. **Gemini (Fallback 3)** - Gemini 2.5 Flash\n   - Backup terakhir jika Claude gagal\n   - Jika semua AI limit, kirim pesan \"layanan tidak tersedia\"\n\nSemua model menggunakan knowledge base dan memory yang sama, sehingga kualitas jawaban tetap konsisten.",
+        "height": 560,
+        "width": 580,
+        "color": 3
+      },
+      "id": "a89395dc-c259-4ac3-a765-eb7726e5bd58",
+      "name": "Sticky Note AI Fallback",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2992,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {
+          "maxOutputTokens": 2048,
+          "temperature": 0.3
+        }
+      },
+      "id": "090c5074-8bf8-432a-82a6-6ef7dc480650",
+      "name": "Gemini Model (Fallback 3)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        1872,
+        576
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YsXCPOeOGxcu1vSu",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "-",
+        "recipientPhoneNumber": "={{ $(\"WhatsApp Trigger\").item.json.messages[0].from }}",
+        "textBody": "Halo Bapak/Ibu Warga Sidorejo,\n\nMohon maaf, layanan PelitaDesa sedang tidak tersedia saat ini dikarenakan banyaknya permintaan dari pengguna.\n\nSilakan coba kembali beberapa saat lagi, atau Anda dapat langsung menghubungi Kantor Balai Desa Sidorejo pada jam operasional kerja:\n- Senin - Kamis: 08.00 - 15.00 WIB\n- Jumat: 08.00 - 14.30 WIB\n\nTerima kasih atas pengertiannya.",
+        "additionalFields": {}
+      },
+      "id": "e186821d-e561-47f8-b3bd-5391393838b7",
+      "name": "Send Service Unavailable Message",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        2144,
+        880
+      ],
+      "webhookId": "YOUR_WEBHOOK_ID",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "5Ou8Up2RRSUyi7Su",
+          "name": "WhatsApp account"
+        }
+      }
+    }
+  ],
+  
+  "pinData": {},
+
+  "connections": {
+    "WhatsApp Trigger": {
+      "main": [
+        [
+          {
+            "node": "Pelitadesa Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pelitadesa Agent": {
+      "main": [
+        [
+          {
+            "node": "Combine Responses",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Combine Responses",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Pelitadesa Agent",
+            "type": "ai_memory",
+            "index": 0
+          },
+          {
+            "node": "Pelitadesa Agent (Gemini)",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Village Knowledge Base": {
+      "ai_tool": [
+        [
+          {
+            "node": "Pelitadesa Agent",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Pelitadesa Agent (Gemini)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Village Knowledge Base",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download File from Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download File from Google Drive": {
+      "main": [
+        [
+          {
+            "node": "Insert to Pinecone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Embeddings Upload": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Insert to Pinecone",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Insert to Pinecone",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Pelitadesa Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Responses": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pelitadesa Agent (Gemini)": {
+      "main": [
+        [
+          {
+            "node": "Combine Responses",
+            "type": "main",
+            "index": 3
+          }
+        ],
+        [
+          {
+            "node": "Send Service Unavailable Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Model (Fallback 3)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Pelitadesa Agent (Gemini)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "b43a1aa4-7883-4675-aa97-1ab692f51749",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": ""
+  },
+  "nodeGroups": [],
+  "id": "rJsADoG0snVuwGKC",
+  "tags": []
+}
