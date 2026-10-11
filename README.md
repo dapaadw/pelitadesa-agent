@@ -1,4 +1,4 @@
-# PelitaDesa: Fault-Tolerant RAG AI Assistant for Village Administration
+# PelitaDesa: RAG AI Assistant for Village Administration
 
 An automated, retrieval-grounded conversational agent deployed via WhatsApp Cloud API to assist rural residents in Desa Sidorejo with local government bureaucracy, public service requirements, and official office schedules.
 
