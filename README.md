@@ -38,7 +38,7 @@ flowchart TD
 
 ### 1. RAG Knowledge Ingestion Pipeline
 - **Document Preprocessing:** Raw municipal guidelines and administrative documents (`.md` format) ingested from Google Drive.
-- **Chunking Strategy:** `RecursiveCharacterTextSplitter` configured with an overlap of 200 characters to preserve cross-boundary administrative context (e.g., conditional requirements for KTP, KK, and N1–N4 marriage certificates).
+- **Chunking Strategy:** `RecursiveCharacterTextSplitter` configured with an overlap of 200 characters to preserve cross-boundary administrative context (e.g., conditional requirements for KTP, KK, and marriage certificates).
 - **Embedding & Vector Storage:** High-dimensional semantic indexing generated via Google Gemini Embeddings and persisted in Pinecone (`sidorejo-db`).
 
 ### 2. Autonomous Agent & Strict Grounding Guardrails
